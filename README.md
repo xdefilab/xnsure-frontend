@@ -15,3 +15,24 @@ xNsure provide AMM European call and put options by introducing AMM tools to non
 - Payout procedures with different priorities
 
 ## xNsure Frontend
+
+
+Forked from [sushiswap/sushiswap-classic-exchange](https://github.com/sushiswap/sushiswap-classic-exchange).
+
+### Development
+
+#### Install Dependencies
+
+```bash
+yarn
+```
+
+#### Run
+
+```bash
+yarn start
+```
+
+### Contributions
+
+**Please open all pull requests against the `master` branch.** 
