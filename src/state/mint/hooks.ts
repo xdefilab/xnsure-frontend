@@ -135,15 +135,15 @@ export function useDerivedMintInfo(
 
   let error: string | undefined
   if (!account) {
-    error = t('connectWallet');
+    error = t('connectWallet')
   }
 
   if (pairState === PairState.INVALID) {
-    error = error ?? t('invalidPair');
+    error = error ?? t('invalidPair')
   }
 
   if (!parsedAmounts[Field.CURRENCY_A] || !parsedAmounts[Field.CURRENCY_B]) {
-    error = error ?? t('enterAnAmount');
+    error = error ?? t('enterAnAmount')
   }
 
   const { [Field.CURRENCY_A]: currencyAAmount, [Field.CURRENCY_B]: currencyBAmount } = parsedAmounts

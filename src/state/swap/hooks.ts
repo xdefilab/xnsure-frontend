@@ -163,27 +163,27 @@ export function useDerivedSwapInfo(): {
 
   let inputError: string | undefined
   if (!account) {
-    inputError = t('connectWallet');
+    inputError = t('connectWallet')
   }
 
   if (!parsedAmount) {
-    inputError = inputError ?? t('enterAnAmount');
+    inputError = inputError ?? t('enterAnAmount')
   }
 
   if (!currencies[Field.INPUT] || !currencies[Field.OUTPUT]) {
-    inputError = inputError ?? t('selectAToken');
+    inputError = inputError ?? t('selectAToken')
   }
 
   const formattedTo = isAddress(to)
   if (!to || !formattedTo) {
-    inputError = inputError ?? t('enterARecipient'); 
+    inputError = inputError ?? t('enterARecipient')
   } else {
     if (
       BAD_RECIPIENT_ADDRESSES.indexOf(formattedTo) !== -1 ||
       (bestTradeExactIn && involvesAddress(bestTradeExactIn, formattedTo)) ||
       (bestTradeExactOut && involvesAddress(bestTradeExactOut, formattedTo))
     ) {
-      inputError = inputError ?? t('invalidRecipt'); 
+      inputError = inputError ?? t('invalidRecipt')
     }
   }
 

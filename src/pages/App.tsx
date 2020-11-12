@@ -5,6 +5,8 @@ import GoogleAnalyticsReporter from '../components/analytics/GoogleAnalyticsRepo
 import Header from '../components/Header'
 import Popups from '../components/Popups'
 import Web3ReactManager from '../components/Web3ReactManager'
+import { Trade } from './Trade'
+import { RedirectPathToTradeOnly } from './Trade/redirects'
 /* import AddLiquidity from './AddLiquidity'
 import {
   RedirectDuplicateTokenIds,
@@ -69,7 +71,10 @@ export default function App() {
             <Popups />
             <Web3ReactManager>
               <Switch>
-{/*                 <Route exact strict path="/swap" component={Swap} />
+                <Route exact strict path="/trade" component={Trade} />
+                <Route exact strict path="/mint" component={Trade} />
+                <Route component={RedirectPathToTradeOnly} />
+                {/*                 <Route exact strict path="/swap" component={Swap} />
                 <Route exact strict path="/swap/:outputCurrency" component={RedirectToSwap} />
                 <Route exact strict path="/send" component={RedirectPathToSwapOnly} />
                 <Route exact strict path="/find" component={PoolFinder} />

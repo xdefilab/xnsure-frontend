@@ -56,11 +56,25 @@ export function SwapPoolTabs({ active }: { active: 'swap' | 'pool' }) {
   const { t } = useTranslation()
   return (
     <Tabs style={{ marginBottom: '20px' }}>
-      <StyledNavLink id={`swap-nav-link`} to={'/swap'} isActive={() => active === 'swap'}>
-        {t('swap')}
+      <StyledNavLink id={`swap-nav-link`} to={'/trade'} isActive={() => active === 'swap'}>
+        {t('trade')}
       </StyledNavLink>
-      <StyledNavLink id={`pool-nav-link`} to={'/pool'} isActive={() => active === 'pool'}>
-        {t('pool')}
+      <StyledNavLink id={`pool-nav-link`} to={'/mint'} isActive={() => active === 'pool'}>
+        {t('mint')}
+      </StyledNavLink>
+    </Tabs>
+  )
+}
+
+export function TradeMintTabs({ active }: { active: 'trade' | 'mint' }) {
+  const { t } = useTranslation()
+  return (
+    <Tabs style={{ marginBottom: '20px' }}>
+      <StyledNavLink id={`swap-nav-link`} to={'/trade'} isActive={() => active === 'trade'}>
+        {t('trade')}
+      </StyledNavLink>
+      <StyledNavLink id={`pool-nav-link`} to={'/mint'} isActive={() => active === 'mint'}>
+        {t('mint')}
       </StyledNavLink>
     </Tabs>
   )

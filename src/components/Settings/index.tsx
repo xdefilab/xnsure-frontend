@@ -150,17 +150,17 @@ export default function SettingsTab() {
             <RowBetween style={{ padding: '0 2rem' }}>
               <div />
               <Text fontWeight={500} fontSize={20}>
-              {t('areYouSure')}
+                {t('areYouSure')}
               </Text>
               <StyledCloseIcon onClick={() => setShowConfirmation(false)} />
             </RowBetween>
             <Break />
             <AutoColumn gap="lg" style={{ padding: '0 2rem' }}>
               <Text fontWeight={500} fontSize={20}>
-              {t('expertModeTips1')}
+                {t('expertModeTips1')}
               </Text>
               <Text fontWeight={600} fontSize={20}>
-              {t('expertModeTips2')}
+                {t('expertModeTips2')}
               </Text>
               <ButtonError
                 error={true}
@@ -173,7 +173,7 @@ export default function SettingsTab() {
                 }}
               >
                 <Text fontSize={20} fontWeight={500} id="confirm-expert-mode">
-                {t('turnOnExpertMode')}
+                  {t('turnOnExpertMode')}
                 </Text>
               </ButtonError>
             </AutoColumn>
@@ -203,7 +203,7 @@ export default function SettingsTab() {
               setDeadline={setDeadline}
             />
             <Text fontWeight={600} fontSize={14}>
-            {t('interfaceSettings')}
+              {t('interfaceSettings')}
             </Text>
             <RowBetween>
               <RowFixed>
