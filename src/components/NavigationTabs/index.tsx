@@ -66,7 +66,7 @@ export function SwapPoolTabs({ active }: { active: 'swap' | 'pool' }) {
   )
 }
 
-export function TradeMintTabs({ active }: { active: 'trade' | 'mint' }) {
+export function TradeMintTabs({ active }: { active: 'trade' | 'mint' | 'pool' | 'exercise' }) {
   const { t } = useTranslation()
   return (
     <Tabs style={{ marginBottom: '20px' }}>
@@ -75,6 +75,12 @@ export function TradeMintTabs({ active }: { active: 'trade' | 'mint' }) {
       </StyledNavLink>
       <StyledNavLink id={`pool-nav-link`} to={'/mint'} isActive={() => active === 'mint'}>
         {t('mint')}
+      </StyledNavLink>
+      <StyledNavLink id={`pool-nav-link`} to={'/pool'} isActive={() => active === 'pool'}>
+        {'Pool'}
+      </StyledNavLink>
+      <StyledNavLink id={`pool-nav-link`} to={'/exercise'} isActive={() => active === 'exercise'}>
+        {'Exercise'}
       </StyledNavLink>
     </Tabs>
   )

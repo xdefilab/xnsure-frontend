@@ -200,7 +200,7 @@ function useUpdater(): [number[], React.Dispatch<React.SetStateAction<OptionPara
     return [priceList, setOptionParams];
 }
 
-export function Trade() {
+export function Mint() {
   const [callput, setCallput] = useState('CALL')
 
   const [currency, setCurrency] = useState<Currency>()
@@ -240,7 +240,7 @@ export function Trade() {
   // TODO: TokenWarningModal
   return (
     <AppBody>
-      <TradeMintTabs active={'trade'} />
+      <TradeMintTabs active={'mint'} />
       <ConfirmSwapModal
         isOpen={showConfirm}
         attemptingTxn={true}
@@ -319,11 +319,11 @@ export function Trade() {
           <LabelRow>
             <RowBetween>
               <TYPE.body color={theme.text2} fontWeight={500} fontSize={14}>
-                {'Amount to Trade'}
+                {`Lock ${callput === 'CALL' ? 'ETH' : 'USDT'} as Collateral`}
               </TYPE.body>
 
               <TYPE.body color={theme.text2} fontWeight={500} fontSize={14}>
-                {`USDT to ${buysell === 'BUY' ? 'Cost' : 'Gain'}`}
+                {`Option Token to Generate`}
               </TYPE.body>
             </RowBetween>
           </LabelRow>
@@ -338,8 +338,8 @@ export function Trade() {
             />
 
             <CostLabel>
-              {`Total ${buysell === 'BUY' ? 'Cost' : 'Gain'}: ${(Number(tradeAmount) *
-                (selectedTarget ? priceList[targets.indexOf(selectedTarget)] : 0)).toFixed(3)} USDT`}
+              {`Total Options to Generate: ${(Number(tradeAmount) *
+                (selectedTarget ? priceList[targets.indexOf(selectedTarget)] : 0)).toFixed(3)}`}
             </CostLabel>
           </InputRow>
         </Container>

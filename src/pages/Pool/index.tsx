@@ -2,7 +2,7 @@ import React, { useContext, useMemo } from 'react'
 import { ThemeContext } from 'styled-components'
 import { Pair } from '@uniswap/sdk'
 import { Link } from 'react-router-dom'
-import { SwapPoolTabs } from '../../components/NavigationTabs'
+import { TradeMintTabs } from '../../components/NavigationTabs'
 import { useTranslation } from 'react-i18next'
 
 import Question from '../../components/QuestionHelper'
@@ -61,7 +61,7 @@ export default function Pool() {
   return (
     <>
       <AppBody>
-        <SwapPoolTabs active={'pool'} />
+      <TradeMintTabs active={'pool'} />
         <AutoColumn gap="lg" justify="center">
           <ButtonPrimary id="join-pool-button" as={Link} style={{ padding: 16 }} to="/add/ETH">
             <Text fontWeight={500} fontSize={20}>

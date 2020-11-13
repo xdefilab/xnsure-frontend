@@ -7,7 +7,8 @@ import Popups from '../components/Popups'
 import Web3ReactManager from '../components/Web3ReactManager'
 import { Trade } from './Trade'
 import { RedirectPathToTradeOnly } from './Trade/redirects'
-/* import AddLiquidity from './AddLiquidity'
+import { Mint } from './Mint'
+import AddLiquidity from './AddLiquidity'
 import {
   RedirectDuplicateTokenIds,
   RedirectOldAddLiquidityPathStructure,
@@ -22,7 +23,7 @@ import RemoveLiquidity from './RemoveLiquidity'
 import { RedirectOldRemoveLiquidityPathStructure } from './RemoveLiquidity/redirects'
 import Swap from './Swap'
 import { RedirectPathToSwapOnly, RedirectToSwap } from './Swap/redirects'
- */
+ 
 const AppWrapper = styled.div`
   display: flex;
   flex-flow: column;
@@ -72,7 +73,18 @@ export default function App() {
             <Web3ReactManager>
               <Switch>
                 <Route exact strict path="/trade" component={Trade} />
-                <Route exact strict path="/mint" component={Trade} />
+                <Route exact strict path="/mint" component={Mint} />
+                
+                <Route exact strict path="/find" component={PoolFinder} />
+                <Route exact strict path="/pool" component={Pool} />
+                <Route exact strict path="/create" component={RedirectToAddLiquidity} />
+                <Route exact path="/add" component={AddLiquidity} />
+                <Route exact path="/add/:currencyIdA" component={RedirectOldAddLiquidityPathStructure} />
+                <Route exact path="/add/:currencyIdA/:currencyIdB" component={RedirectDuplicateTokenIds} />
+
+                <Route exact strict path="/remove/:tokens" component={RedirectOldRemoveLiquidityPathStructure} />
+                <Route exact strict path="/remove/:currencyIdA/:currencyIdB" component={RemoveLiquidity} />
+
                 <Route component={RedirectPathToTradeOnly} />
                 {/*                 <Route exact strict path="/swap" component={Swap} />
                 <Route exact strict path="/swap/:outputCurrency" component={RedirectToSwap} />
