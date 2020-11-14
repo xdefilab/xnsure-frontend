@@ -194,7 +194,6 @@ function useUpdater(): [number[], React.Dispatch<React.SetStateAction<OptionPara
         optionParams.targets.forEach(param => {
             prices.push(Math.random() * 10);
         })
-        console.log(prices)
         setPriceList(prices)
     }, 1000);
     return [priceList, setOptionParams];

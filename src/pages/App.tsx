@@ -9,6 +9,10 @@ import { Trade } from './Trade'
 import { RedirectPathToTradeOnly } from './Trade/redirects'
 import { Mint } from './Mint'
 import AddLiquidity from './AddLiquidity'
+import { useContract } from '../hooks/useContract'
+import NSUREPUTTOKEN_ABI from '../constants/xnsure/NsurePutToken.json'
+
+import { useActiveWeb3React } from '../hooks'
 import {
   RedirectDuplicateTokenIds,
   RedirectOldAddLiquidityPathStructure,
@@ -60,6 +64,13 @@ const Marginer = styled.div`
 `
 
 export default function App() {
+  console.log('holy crap!!!!!!!!!!!!!!!!')
+  //const { chainId, account, connector } = useActiveWeb3React()
+  const contract = useContract('0xD833215cBcc3f914bD1C9ece3EE7BF8B14f841bb', NSUREPUTTOKEN_ABI.abi);
+
+  
+  const result = useActiveWeb3React();
+  console.log(result)
   return (
     <Suspense fallback={null}>
       <HashRouter>
