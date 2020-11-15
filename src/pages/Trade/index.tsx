@@ -13,6 +13,12 @@ import { Input as NumericalInput } from '../../components/NumericalInput'
 import { ButtonError, ButtonLight, ButtonPrimary, ButtonConfirmed } from '../../components/Button'
 import { Text } from 'rebass'
 import ConfirmSwapModal from '../../components/swap/ConfirmSwapModal'
+import { useContract, useTokenContract } from '../../hooks/useContract'
+import { getContractMeta } from '../../xnsure'
+
+import { useActiveWeb3React } from '../../hooks'
+import { useHistory } from 'react-router-dom'
+import Web3 from 'web3'
 
 const CallPutButton = styled.button<{ selected: boolean }>`
   align-items: center;
@@ -179,10 +185,20 @@ const Container = styled.div<{ hideInput: boolean }>`
 interface OptionParams {
     token: string;
     deadline: string;
-    targets: number[];
+    targets: string[];
 }
 
 function useUpdater(): [number[], React.Dispatch<React.SetStateAction<OptionParams | undefined>>] {
+  const contractMeta = getContractMeta('OptionController');  
+  const contract = useContract(contractMeta.address, contractMeta.abi);
+
+  const { chainId, account, connector } = useActiveWeb3React()
+  const timestamp = (new Date()).valueOf() + 300000;
+  console.log(timestamp)
+  console.log(contract)
+  if (contract) {
+  }
+  
     const [priceList, setPriceList] = useState<number[]>([]);
     const [optionParams, setOptionParams] = useState<OptionParams>();
     // TODO: 设置了interval 里面有 state 变量, 不会跟着变化的吧
@@ -191,36 +207,75 @@ function useUpdater(): [number[], React.Dispatch<React.SetStateAction<OptionPara
             return
         }
         const prices: number[] = []
-        optionParams.targets.forEach(param => {
-            prices.push(Math.random() * 10);
+        optionParams.targets.forEach(async (target: string) => {
+          if( !contract ) {
+            prices.push(0)
+            return
+          }
+          console.log(contract)
+          console.log(optionParams.deadline)
+          console.log("niko 的trade数据调用参数")
+          console.log([optionParams.deadline, target, "1000000000000000000"])
+          const price = 1
+          //const price = await contract.getUnderlyingIn(optionParams.deadline, (target), Web3.utils.toWei('1'))
+          //prices.push(Math.random() * 10);
+          prices.push(price)
+          console.log("niko 测试价格")
+          console.log(price)
         })
-        setPriceList(prices)
-    }, 1000);
+        
+        //setPriceList(prices)
+    }, 1500);
     return [priceList, setOptionParams];
 }
 
 export function Trade() {
   const [callput, setCallput] = useState('CALL')
+  const history = useHistory()
 
   const [currency, setCurrency] = useState<Currency>()
   
-  const [selectedDate, setSelectedDate] = useState('2020-11-15')
-  const [selectedTarget, setSelectedTarget] = useState<number>()
+  const [selectedDate, setSelectedDate] = useState('2020-11-20')
+  const [selectedTarget, setSelectedTarget] = useState<string>()
 
   const [tradeAmount, setTradeAmount] = useState('0')
 
   const [buysell, setBuySell] = useState('BUY')
   const [showConfirm, setShowConfirm] = useState(false)
   
-  const [targets, setTargets] = useState<number[]>([])
-  const [deadlines, setDeadlines] = useState<number[]>([])
+  const [targets, setTargets] = useState<string[]>([])
+  const [deadlines, setDeadlines] = useState<string[]>([])
 
   const [priceList, setOptionParams] = useUpdater();
-  
 
-  useEffect(() => {
-    setTargets([300, 350, 370, 380, 400]);
-    setDeadlines([1,2,3,4,5])
+  const meta = getContractMeta('OptionController')
+  const contract = useContract(meta.address, meta.abi)
+  const dai = useTokenContract('0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa')
+  
+  const priceCall = [63, 70.56, 34.86, 4.2]
+
+  useEffect( () => {
+    async function call () {
+      console.log()
+      if (!contract) {
+        console.log('niuko useEffect getDeadlines!!!CANGT')
+        return
+      }
+      console.log('niuko useEffect getDeadlines')
+      const ddl = await contract.getDeadlines()
+      console.log(ddl)
+      
+      const d = ddl.map( (item:string) => parseInt(item, 10)   )
+      console.log(ddl)
+      setDeadlines(d)
+      const targets = await contract.getTargets()
+    
+      console.log('这就是target 了吗')
+      console.log(targets)
+      const t = targets.map( (item:string) => parseInt(item, 10)   )
+      setTargets(t)
+    }
+    setTimeout(() => call(), 1000)
   }, [])
 
   useEffect(() => {
@@ -229,7 +284,7 @@ export function Trade() {
     }
     setOptionParams({
         token: currency && currency.symbol ?  currency.symbol : '',
-        deadline: selectedDate,
+        deadline: deadlines[0],
         targets,
     })
   }, [currency, selectedDate, targets])
@@ -270,6 +325,9 @@ export function Trade() {
               id="swap-currency-output"
             />
             <ExpireDateSelectButton onDateSelected={setSelectedDate} />
+            <CallPutButton onClick={() => {console.log("history asdasd");history.push('/trade2')}} selected={false}>
+              {'Normal Mode'}
+            </CallPutButton>
           </div>
           <div>
             <CallPutButton onClick={() => setCallput(callput === 'CALL' ? 'PUT' : 'CALL')} selected={true}>
@@ -303,7 +361,7 @@ export function Trade() {
                     <OptionInfoMid>{callput}</OptionInfoMid>
                     <OptionInfoMid>{selectedDate}</OptionInfoMid>
                     <OptionInfoMid>{target}</OptionInfoMid>
-                    <OptionInfoRight>{priceList && priceList.length > index && index >= 0 && priceList[index].toFixed(3)}</OptionInfoRight>
+                    <OptionInfoRight>{ priceCall && priceCall.length > index && index >= 0 && priceCall[index]}</OptionInfoRight>
                   </OptionItem>
                 )
               })}
@@ -318,7 +376,7 @@ export function Trade() {
           <LabelRow>
             <RowBetween>
               <TYPE.body color={theme.text2} fontWeight={500} fontSize={14}>
-                {'Amount to Trade'}
+                {`Amount to Trade`}
               </TYPE.body>
 
               <TYPE.body color={theme.text2} fontWeight={500} fontSize={14}>
@@ -337,8 +395,10 @@ export function Trade() {
             />
 
             <CostLabel>
-              {`Total ${buysell === 'BUY' ? 'Cost' : 'Gain'}: ${(Number(tradeAmount) *
-                (selectedTarget ? priceList[targets.indexOf(selectedTarget)] : 0)).toFixed(3)} USDT`}
+              {
+                `Total ${buysell === 'BUY' ? 'Cost' : 'Gain'}: ${(Number(tradeAmount) *
+                  (selectedTarget ? priceList[targets.indexOf(selectedTarget)] : 0)).toFixed(3)} USDT`
+              }
             </CostLabel>
           </InputRow>
         </Container>
@@ -346,6 +406,28 @@ export function Trade() {
           <ButtonError
             onClick={() => {
               setShowConfirm(true)
+              console.log('niko minting .....')
+              async function swap() {
+                const meta = getContractMeta('OptionController');
+                if (!dai) {
+                  return
+                }
+                await dai.approve(meta.address, Web3.utils.toWei(tradeAmount), {
+                  gasLimit: 300000
+                })
+                if (!contract) {
+                  return
+                }
+                await contract.swap(deadlines[0], selectedTarget, buysell === 'BUY' ? '0':'1',Web3.utils.toWei(tradeAmount), 0)
+                setShowConfirm(false)
+              }
+
+              if (contract) {
+                console.log('niko minting 222 .....')
+                console.log(tradeAmount)
+
+                swap()
+              }
             }}
             disabled={!(selectedTarget && Number(tradeAmount) > 0)}
             error={undefined}

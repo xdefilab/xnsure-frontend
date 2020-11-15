@@ -126,7 +126,13 @@ export default function WalletModal({
 }) {
   // important that these are destructed from the account-specific web3-react context
   const { active, account, connector, activate, error } = useWeb3React()
-
+  //TODO: sao caozuo
+  /*
+  connector && connector.supportedChainIds && connector.supportedChainIds.push(1337)
+  console.log('connector .........')
+  console.log(connector)
+  const error: any = undefined;
+*/
   const [walletView, setWalletView] = useState(WALLET_VIEWS.ACCOUNT)
 
   const [pendingWallet, setPendingWallet] = useState<AbstractConnector | undefined>()

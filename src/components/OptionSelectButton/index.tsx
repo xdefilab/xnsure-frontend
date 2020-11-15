@@ -13,7 +13,8 @@ import { ReactComponent as DropDown } from '../../assets/images/dropdown.svg'
 
 import { useActiveWeb3React } from '../../hooks'
 import { useTranslation } from 'react-i18next'
-import ExpireDateModal from '../ExpireDateModal/ExpireDateModal'
+//import ExpireDateModal from '../ExpireDateModal/ExpireDateModal'
+import OptionSelectModal, { OptionItem } from '../OptionSelectModal/OptionSelectModal'
 
 const InputRow = styled.div<{ selected: boolean }>`
   ${({ theme }) => theme.flexRowNoWrap}
@@ -117,29 +118,29 @@ const StyledBalanceMax = styled.button`
 `
 
 interface CurrencyInputPanelProps {
-  onDateSelected: (date: string) => void
+  onDateSelected: (date: OptionItem) => void
 }
 
-export default function ExpireDateSelectButton({ onDateSelected }: CurrencyInputPanelProps) {
+export default function OptionSelectButton({ onDateSelected }: CurrencyInputPanelProps) {
   const [modalOpen, setModalOpen] = useState(false)
 
-  const [selectedDate, setSelectedDate] = useState('2020-11-20')
+  const [selectedDate, setSelectedDate] = useState<OptionItem>()
 
   const handleDismissSearch = useCallback(() => {
     setModalOpen(false)
   }, [setModalOpen])
 
-  const onDateSelect = (item: string) => {
+  const onDateSelect = (item: OptionItem) => {
     onDateSelected(item)
     setSelectedDate(item)
   }
 
   return (
     <>
-      <ExpireDateModal isOpen={modalOpen} onDismiss={handleDismissSearch} onDateSelect={onDateSelect} />
+      <OptionSelectModal isOpen={modalOpen} onDismiss={handleDismissSearch} onDateSelect={onDateSelect} />
       <CurrencySelect selected={false} className="open-currency-select-button" onClick={() => setModalOpen(true)}>
         <Aligner>
-          <StyledTokenName className="pair-name-container">{selectedDate}</StyledTokenName>
+          <StyledTokenName className="pair-name-container">{selectedDate ? selectedDate.title : 'No Option Selected'}</StyledTokenName>
           <StyledDropDown selected={false} />
         </Aligner>
       </CurrencySelect>

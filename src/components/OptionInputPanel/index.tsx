@@ -10,10 +10,10 @@ import { RowBetween } from '../Row'
 import { TYPE } from '../../theme'
 import { Input as NumericalInput } from '../NumericalInput'
 import { ReactComponent as DropDown } from '../../assets/images/dropdown.svg'
+import OptionSelectModal, { OptionItem } from '../OptionSelectModal/OptionSelectModal'
 
 import { useActiveWeb3React } from '../../hooks'
 import { useTranslation } from 'react-i18next'
-import ExpireDateModal from '../ExpireDateModal/ExpireDateModal'
 
 const InputRow = styled.div<{ selected: boolean }>`
   ${({ theme }) => theme.flexRowNoWrap}
@@ -35,7 +35,6 @@ const CurrencySelect = styled.button<{ selected: boolean }>`
   user-select: none;
   border: none;
   padding: 0 0.5rem;
-  margin-left: 0.5rem;
 
   :focus,
   :hover {
@@ -117,32 +116,110 @@ const StyledBalanceMax = styled.button`
 `
 
 interface CurrencyInputPanelProps {
-  onDateSelected: (date: string) => void
+  value: string
+  onUserInput: (value: string) => void
+  onMax?: () => void
+  showMaxButton: boolean
+  label?: string
+  onDateSelected: (q: OptionItem) => void
+  currency?: Currency | null
+  disableCurrencySelect?: boolean
+  hideBalance?: boolean
+  pair?: Pair | null
+  hideInput?: boolean
+  otherCurrency?: Currency | null
+  id: string
+  showCommonBases?: boolean
 }
 
-export default function ExpireDateSelectButton({ onDateSelected }: CurrencyInputPanelProps) {
-  const [modalOpen, setModalOpen] = useState(false)
+export default function OptionInputPanel({
+  value,
+  onUserInput,
+  onMax,
+  showMaxButton,
+  label = 'Input',
+  onDateSelected,
+  currency,
+  disableCurrencySelect = false,
+  hideBalance = false,
+  pair = null, // used for double token logo
+  hideInput = false,
+  otherCurrency,
+  id,
+  showCommonBases
+}: CurrencyInputPanelProps) {
+  const { t } = useTranslation()
 
-  const [selectedDate, setSelectedDate] = useState('2020-11-20')
+  const [modalOpen, setModalOpen] = useState(false)
+  const { account } = useActiveWeb3React()
+  const selectedCurrencyBalance = useCurrencyBalance(account ?? undefined, currency ?? undefined)
+  const theme = useContext(ThemeContext)
+  const [selectedDate, setSelectedDate] = useState<OptionItem>()
 
   const handleDismissSearch = useCallback(() => {
     setModalOpen(false)
   }, [setModalOpen])
 
-  const onDateSelect = (item: string) => {
+  const onDateSelect = (item: OptionItem) => {
     onDateSelected(item)
     setSelectedDate(item)
   }
 
   return (
-    <>
-      <ExpireDateModal isOpen={modalOpen} onDismiss={handleDismissSearch} onDateSelect={onDateSelect} />
-      <CurrencySelect selected={false} className="open-currency-select-button" onClick={() => setModalOpen(true)}>
+    <InputPanel id={id}>
+      <Container hideInput={hideInput}>
+        {!hideInput && (
+          <LabelRow>
+            <RowBetween>
+              <TYPE.body color={theme.text2} fontWeight={500} fontSize={14}>
+                {label}
+              </TYPE.body>
+              {account && (
+                <TYPE.body
+                  onClick={onMax}
+                  color={theme.text2}
+                  fontWeight={500}
+                  fontSize={14}
+                  style={{ display: 'inline', cursor: 'pointer' }}
+                >
+                  {!hideBalance && !!currency && selectedCurrencyBalance
+                    ? 'Balance: ' + selectedCurrencyBalance?.toSignificant(6)
+                    : ' -'}
+                </TYPE.body>
+              )}
+            </RowBetween>
+          </LabelRow>
+        )}
+        <InputRow style={hideInput ? { padding: '0', borderRadius: '8px' } : {}} selected={disableCurrencySelect}>
+          {!hideInput && (
+            <>
+              <NumericalInput
+                className="token-amount-input"
+                value={value}
+                onUserInput={val => {
+                  onUserInput(val)
+                }}
+              />
+              {account && currency && showMaxButton && label !== 'To' && (
+                <StyledBalanceMax onClick={onMax}>MAX</StyledBalanceMax>
+              )}
+            </>
+          )}
+          <CurrencySelect selected={false} className="open-currency-select-button" onClick={() => setModalOpen(true)}>
         <Aligner>
-          <StyledTokenName className="pair-name-container">{selectedDate}</StyledTokenName>
+          <StyledTokenName className="pair-name-container">{selectedDate ? selectedDate.title : 'No Option Selected'}</StyledTokenName>
           <StyledDropDown selected={false} />
         </Aligner>
       </CurrencySelect>
-    </>
+        </InputRow>
+      </Container>
+      {!disableCurrencySelect && (
+        <OptionSelectModal
+          isOpen={modalOpen}
+          onDismiss={handleDismissSearch}
+          onDateSelect={onDateSelect}
+        />
+      )}
+    </InputPanel>
   )
 }

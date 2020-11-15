@@ -28,6 +28,9 @@ import { RedirectOldRemoveLiquidityPathStructure } from './RemoveLiquidity/redir
 import Swap from './Swap'
 import { RedirectPathToSwapOnly, RedirectToSwap } from './Swap/redirects'
  
+import { InjectedConnector } from '@web3-react/injected-connector'
+import { Trade2 } from './Trade2'
+
 const AppWrapper = styled.div`
   display: flex;
   flex-flow: column;
@@ -63,6 +66,7 @@ const Marginer = styled.div`
   margin-top: 5rem;
 `
 
+
 export default function App() {
   console.log('holy crap!!!!!!!!!!!!!!!!')
   //const { chainId, account, connector } = useActiveWeb3React()
@@ -84,6 +88,7 @@ export default function App() {
             <Web3ReactManager>
               <Switch>
                 <Route exact strict path="/trade" component={Trade} />
+                <Route exact strict path="/trade2" component={Trade2} />
                 <Route exact strict path="/mint" component={Mint} />
                 
                 <Route exact strict path="/find" component={PoolFinder} />

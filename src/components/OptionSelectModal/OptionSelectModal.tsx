@@ -17,6 +17,8 @@ import Card from '../Card'
 import Column from '../Column'
 import AutoSizer from 'react-virtualized-auto-sizer'
 import { FixedSizeList } from 'react-window'
+import { useContract } from '../../hooks/useContract'
+import { getContractMeta } from '../../xnsure'
 
 const ExpireDateList = styled.div`
   width: 100%;
@@ -41,14 +43,23 @@ const ListItem = styled.div`
     background: #2d2f36;
   }
 `
+export interface OptionItem {
+  title: string;
+  deadline: number;
+  target: number;
+}
 
 interface CurrencySearchModalProps {
   isOpen: boolean
   onDismiss: () => void
-  onDateSelect: (date: string) => void
+  onDateSelect: (date: OptionItem) => void
 }
 
-export default function ExpireDateModal({ isOpen, onDismiss, onDateSelect }: CurrencySearchModalProps) {
+function getDateByDeadline(deadline: number) {
+  return '2020-11-20';
+}
+
+export default function OptionSelectModal({ isOpen, onDismiss, onDateSelect }: CurrencySearchModalProps) {
   const [listView, setListView] = useState<boolean>(false)
   const lastOpen = useLast(isOpen)
 
@@ -58,17 +69,61 @@ export default function ExpireDateModal({ isOpen, onDismiss, onDateSelect }: Cur
     }
   }, [isOpen, lastOpen])
 
+  
+
+  const [deadlines, setDeadlines] = useState<number[]>([])
+  const [targets, setTargets] = useState<number[]>([])
+  const [optionList, setOptionList] = useState<OptionItem[]>([])
+
+  const meta = getContractMeta('OptionController')
+
+  const contract = useContract(meta.address, meta.abi);
+
+  useEffect(() => {
+    async function getItems() {
+      if (contract) {
+        const deadlines = await contract.getDeadlines();
+        console.log('测试 contract.getDeadlines() contract.getDeadlines()')
+        console.log(deadlines)
+        setDeadlines(deadlines)
+        const targets = await contract.getTargets();
+        console.log('测试 contract.getTargets()')
+        console.log(targets)
+        setTargets(targets)
+      }
+    }
+    getItems()
+  }, [isOpen])
+
+  useEffect(() => {
+    const optionlist:OptionItem[] = []
+    for (let i = 0; i < deadlines.length; i++) {
+      for (let j = 0; j < targets.length; j ++) {
+        optionlist.push({
+          title: `CALL AT ${targets[j]} expired at ${getDateByDeadline(deadlines[i])}`,
+          target: targets[j],
+          deadline: deadlines[i]
+        })
+        optionlist.push({
+          title: `PUT AT ${targets[j]} expired at ${getDateByDeadline(deadlines[i])}`,
+          target: targets[j],
+          deadline: deadlines[i]
+        })
+      }
+    }
+    setOptionList(optionlist)
+  }, [deadlines, targets])
+
+
   const selectedListUrl = useSelectedListUrl()
   const noListSelected = !selectedListUrl
-  const itemData: string[] = ['2020-11-20']
-
   return (
     <Modal isOpen={isOpen} onDismiss={onDismiss} maxHeight={90} minHeight={listView ? 40 : noListSelected ? 0 : 80}>
       <Column style={{ width: '100%', flex: '1 1' }}>
         <PaddedColumn gap="14px">
           <RowBetween>
             <Text fontWeight={500} fontSize={16}>
-              Select a Expire Date
+              Select a Option Contract
             </Text>
             <CloseIcon onClick={onDismiss} />
           </RowBetween>
@@ -78,7 +133,7 @@ export default function ExpireDateModal({ isOpen, onDismiss, onDateSelect }: Cur
         <div style={{ flex: '1' }}>
           <ExpireDateList>
             <ContentList>
-              {itemData.map(item => {
+              {optionList.map((item: OptionItem) => {
                 return (
                   <div
                     onClick={() => {
@@ -86,7 +141,7 @@ export default function ExpireDateModal({ isOpen, onDismiss, onDateSelect }: Cur
                       onDismiss()
                     }}
                   >
-                    <ListItem>{item}</ListItem>
+                    <ListItem>{item.title}</ListItem>
                     <Separator />
                   </div>
                 )

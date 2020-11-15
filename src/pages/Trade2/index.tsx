@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useContext } from 'react'
-import AppBody from '../AppBody'
 import { TradeMintTabs } from '../../components/NavigationTabs'
 import CurrencySelectButton from '../../components/CurrencySelectButton'
 import { Currency } from '@uniswap/sdk'
@@ -17,6 +16,29 @@ import { useContract } from '../../hooks/useContract'
 import { getContractMeta } from '../../xnsure'
 
 import { useActiveWeb3React } from '../../hooks'
+import { useHistory } from 'react-router-dom'
+
+import axios from 'axios'
+
+
+export const BodyWrapper = styled.div`
+  position: relative;
+  max-width: 920px;
+  width: 100%;
+  background: ${({ theme }) => theme.bg1};
+  box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.01), 0px 4px 8px rgba(0, 0, 0, 0.04), 0px 16px 24px rgba(0, 0, 0, 0.04),
+    0px 24px 32px rgba(0, 0, 0, 0.01);
+  border-radius: 30px;
+  padding: 1rem;
+`
+
+/**
+ * The styled container element that wraps the content of most pages and the tabs.
+ */
+export default function AppBody({ children }: { children: React.ReactNode }) {
+  return <BodyWrapper>{children}</BodyWrapper>
+}
+
 
 const CallPutButton = styled.button<{ selected: boolean }>`
   align-items: center;
@@ -38,7 +60,7 @@ const CallPutButton = styled.button<{ selected: boolean }>`
 
 const OptionList = styled.div`
   width: 100%;
-  height: 150px;
+  height: 300px;
   overflow-y: scroll;
   &::-webkit-scrollbar {
     display: none;
@@ -186,7 +208,7 @@ interface OptionParams {
     targets: string[];
 }
 
-function useUpdater(): [number[], React.Dispatch<React.SetStateAction<OptionParams | undefined>>] {
+function useUpdater(): [number[], number[], number[], React.Dispatch<React.SetStateAction<OptionParams | undefined>>] {
   const contractMeta = getContractMeta('OptionController');  
   const contract = useContract(contractMeta.address, contractMeta.abi);
 
@@ -194,27 +216,80 @@ function useUpdater(): [number[], React.Dispatch<React.SetStateAction<OptionPara
   const timestamp = (new Date()).valueOf() + 300000;
   console.log(timestamp)
   console.log(contract)
+  
   if (contract) {
   }
-  
+    
     const [priceList, setPriceList] = useState<number[]>([]);
+    const [ivCallList, setIvCallList] = useState<number[]>([]);
+    const [ivPutList, setIvPutList] = useState<number[]>([]);
     const [optionParams, setOptionParams] = useState<OptionParams>();
+    useEffect(() => {
+      if (!optionParams) {
+        return
+      }
+
+      const priceCall = [63, 70.56, 34.86, 4.2]
+      const pricePut = [1, 10, 65, 120]
+
+      const civCall: number[] = [0, 0, 0, 0]
+      const civPut: number[] = [0,0,0,0]
+      optionParams.targets.forEach((target: string, index: number) => {
+        async function call() {
+          //const calliv = await axios.get('asd')
+          if (index < priceCall.length) {
+            const calliv = await axios.get(`http://localhost:9876/?direction=CALL&spotprice=420&price=${priceCall[index] / 420}&strikestart=${target}&strikeend=${Number(target) / 0.8}&totalTime=40000&fundingAPY=0.02`)
+            //civCall[index] = calliv
+          }
+          if (index < pricePut.length) {
+            const putdiv = await axios.get(`http://localhost:9876/?direction=PUT&spotprice=420&price=${pricePut[index]}&strikestart=${target}&strikeend=${Number(target) * 0.8}&totalTime=40000&fundingAPY=0.02`)
+            //civPut[index] = putdiv
+          }
+
+          if (index === civPut.length - 1) {
+            setIvPutList(civPut)
+          }
+          
+          if (index === civCall.length - 1) {
+            setIvCallList(civCall)
+          }
+          
+        }
+
+        call()
+        
+      })
+      
+
+
+    }, [optionParams])
     // TODO: 设置了interval 里面有 state 变量, 不会跟着变化的吧
     setInterval(() => {
         if (!optionParams) {
             return
         }
         const prices: number[] = []
-        optionParams.targets.forEach(param => {
-            prices.push(Math.random() * 10);
+        optionParams.targets.forEach(async (target: string) => {
+          if( !contract ) {
+            prices.push(0)
+            return
+          }
+          console.log(contract)
+          console.log(optionParams.deadline)
+          const price = 0
+          //const price = await contract.getUnderlyingIn(optionParams.deadline, target, "1000000000000000000")
+          //prices.push(Math.random() * 10);
+          prices.push(price)
+          console.log("niko 测试价格")
+          console.log(price)
         })
+        
         //setPriceList(prices)
-    }, 1000);
-    return [priceList, setOptionParams];
+    }, 1500);
+    return [priceList, ivCallList, ivPutList, setOptionParams];
 }
 
-export function Mint() {
-  const { chainId, account, connector } = useActiveWeb3React()
+export function Trade2() {
   const [callput, setCallput] = useState('CALL')
 
   const [currency, setCurrency] = useState<Currency>()
@@ -230,10 +305,15 @@ export function Mint() {
   const [targets, setTargets] = useState<string[]>([])
   const [deadlines, setDeadlines] = useState<string[]>([])
 
-  const [priceList, setOptionParams] = useUpdater();
+  const [priceList,  ivCallList, ivPutList, setOptionParams] = useUpdater();
 
   const meta = getContractMeta('OptionController')
   const contract = useContract(meta.address, meta.abi)
+
+  const history = useHistory()
+
+  const priceCall = [63, 70.56, 34.86, 4.2]
+  const pricePut = [1, 10, 65, 120]
   
   useEffect( () => {
     async function call () {
@@ -261,17 +341,20 @@ export function Mint() {
     }
     setOptionParams({
         token: currency && currency.symbol ?  currency.symbol : '',
-        deadline: selectedDate,
+        deadline: deadlines[0],
         targets,
     })
   }, [currency, selectedDate, targets])
+
+  const unclose = [7, 15,9 ,22, 10, 12, 8, 8]
+  const unclose2 = [6, 14, 20 ,20, 8, 14, 12, 6]
 
   const theme = useContext(ThemeContext)
 
   // TODO: TokenWarningModal
   return (
     <AppBody>
-      <TradeMintTabs active={'mint'} />
+      <TradeMintTabs active={'trade'} />
       <ConfirmSwapModal
         isOpen={showConfirm}
         attemptingTxn={true}
@@ -302,11 +385,11 @@ export function Mint() {
               id="swap-currency-output"
             />
             <ExpireDateSelectButton onDateSelected={setSelectedDate} />
+            <CallPutButton onClick={() => {console.log("history asdasd"); history.push('/trade')}} selected={false}>
+              {'Expert Mode'}
+            </CallPutButton>
           </div>
           <div>
-            <CallPutButton onClick={() => setCallput(callput === 'CALL' ? 'PUT' : 'CALL')} selected={true}>
-              {callput}
-            </CallPutButton>
             <CallPutButton onClick={() => setBuySell(buysell === 'BUY' ? 'SELL' : 'BUY')} selected={true}>
               {buysell}
             </CallPutButton>
@@ -315,10 +398,19 @@ export function Mint() {
 
         <Row>
           <OptionTitle>
-            <OptionInfoLeft>{'Token'}</OptionInfoLeft>
-            <OptionInfoMid>{'Call/Put'}</OptionInfoMid>
-            <OptionInfoMid>{'Expire Date'}</OptionInfoMid>
-            <OptionInfoMid>{'Strike Price'}</OptionInfoMid>
+            <OptionInfoLeft>{'CALL'}</OptionInfoLeft>
+            <OptionInfoRight>{'PUT'}</OptionInfoRight>
+          </OptionTitle>
+        </Row>
+
+        <Row>
+          <OptionTitle>
+            <OptionInfoLeft>{'Price'}</OptionInfoLeft>
+            <OptionInfoMid>{'Unclosed'}</OptionInfoMid>
+            <OptionInfoMid>{'IV'}</OptionInfoMid>
+            <OptionInfoMid>{'Strike Window'}</OptionInfoMid>
+            <OptionInfoMid>{'IV'}</OptionInfoMid>
+            <OptionInfoMid>{'Unclosed'}</OptionInfoMid>
             <OptionInfoRight>{'Price'}</OptionInfoRight>
           </OptionTitle>
         </Row>
@@ -331,11 +423,13 @@ export function Mint() {
               { currency?.symbol === 'ETH' && selectedDate && targets?.map((target, index) => {
                 return (
                   <OptionItem onClick={() => setSelectedTarget(target)} selected={selectedTarget === target}>
-                    <OptionInfoLeft>{currency?.symbol}</OptionInfoLeft>
-                    <OptionInfoMid>{callput}</OptionInfoMid>
-                    <OptionInfoMid>{selectedDate}</OptionInfoMid>
-                    <OptionInfoMid>{target}</OptionInfoMid>
-                    <OptionInfoRight>{priceList && priceList.length > index && index >= 0 && priceList[index].toFixed(3)}</OptionInfoRight>
+                    <OptionInfoLeft>{priceCall.length > index && index >= 0 && priceCall[index]}</OptionInfoLeft>
+                    <OptionInfoMid>{unclose[index]}</OptionInfoMid>
+                    <OptionInfoMid>{ivCallList && ivCallList.length>index && index > 0 && ivCallList[index].toFixed(3)}</OptionInfoMid>
+                    <OptionInfoMid>{`${target} - ${Number(target) / 0.8}`}</OptionInfoMid>
+                    <OptionInfoMid>{ivPutList && ivPutList.length>index && index > 0 && ivPutList[index].toFixed(3)}</OptionInfoMid>
+                    <OptionInfoMid>{unclose2[index]}</OptionInfoMid>
+                    <OptionInfoRight>{pricePut.length > index && index >= 0 && pricePut[index]}</OptionInfoRight>
                   </OptionItem>
                 )
               })}
@@ -345,74 +439,6 @@ export function Mint() {
 
         <Separator></Separator>
         <div style={{ height: 10 }}></div>
-
-        <Container hideInput={false}>
-          <LabelRow>
-            <RowBetween>
-              <TYPE.body color={theme.text2} fontWeight={500} fontSize={14}>
-                {`Lock ${callput === 'CALL' ? 'ETH' : 'USDT'} as Collateral`}
-              </TYPE.body>
-
-              <TYPE.body color={theme.text2} fontWeight={500} fontSize={14}>
-                {`Option Token to Generate`}
-              </TYPE.body>
-            </RowBetween>
-          </LabelRow>
-
-          <InputRow selected={false}>
-            <NumericalInput
-              className="token-amount-input"
-              value={tradeAmount}
-              onUserInput={val => {
-                setTradeAmount(val)
-              }}
-            />
-
-            <CostLabel>
-              {`Total Options to Generate: ${(Number(tradeAmount) *
-                (selectedTarget ? priceList[targets.indexOf(selectedTarget)] : 0)).toFixed(3)}`}
-            </CostLabel>
-          </InputRow>
-        </Container>
-        <Row>
-          <ButtonError
-            onClick={() => {
-              setShowConfirm(true)
-              console.log('niko minting .....')
-              if (contract) {
-                console.log('niko minting 222 .....')
-                console.log(tradeAmount)
-                
-                contract.createOption(deadlines[0], selectedTarget, {value: String(Number(tradeAmount)*1000000000000000000), gasLimit: 30000}).then(
-                  ()=>{setShowConfirm(false);
-                    async function logInfo() {
-                      if (!contract) {
-                        return
-                      }
-                      const result = await contract.getOptionBalance(deadlines[0], selectedTarget, account);
-                      console.log("niko log mint result")
-                      console.log(result)
-                    }
-                    logInfo()
-                    
-                    
-                  })
-              }
-            }}
-            disabled={!(selectedTarget && Number(tradeAmount) > 0)}
-            error={undefined}
-          >
-            <Text fontSize={20} fontWeight={500}>
-              {selectedTarget && Number(tradeAmount) > 0
-                ? `Confirm Mint`
-                : !currency
-                ? 'Select a Token'
-                : !selectedTarget
-                ? 'Select a Option'
-                : 'Input Amount'}
-            </Text>
-          </ButtonError>
-        </Row>
       </Column>
     </AppBody>
   )

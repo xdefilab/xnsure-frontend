@@ -17,10 +17,10 @@ import { AddRemoveTabs } from '../../components/NavigationTabs'
 import { MinimalPositionCard } from '../../components/PositionCard'
 import Row, { RowBetween, RowFlat } from '../../components/Row'
 
-import { ROUTER_ADDRESS } from '../../constants'
+import { ROUTER_ADDRESS, DAI } from '../../constants'
 import { PairState } from '../../data/Reserves'
 import { useActiveWeb3React } from '../../hooks'
-import { useCurrency } from '../../hooks/Tokens'
+import { useCurrency, useToken } from '../../hooks/Tokens'
 import { ApprovalState, useApproveCallback } from '../../hooks/useApproveCallback'
 import { useWalletModalToggle } from '../../state/application/hooks'
 import { Field } from '../../state/mint/actions'
@@ -29,7 +29,7 @@ import { useDerivedMintInfo, useMintActionHandlers, useMintState } from '../../s
 import { useTransactionAdder } from '../../state/transactions/hooks'
 import { useIsExpertMode, useUserDeadline, useUserSlippageTolerance } from '../../state/user/hooks'
 import { TYPE } from '../../theme'
-import { calculateGasMargin, calculateSlippageAmount, getRouterContract } from '../../utils'
+import { calculateGasMargin, calculateSlippageAmount, getRouterContract, getProviderOrSigner } from '../../utils'
 import { maxAmountSpend } from '../../utils/maxAmountSpend'
 import { wrappedCurrency } from '../../utils/wrappedCurrency'
 import AppBody from '../AppBody'
@@ -37,6 +37,13 @@ import { Dots, Wrapper } from '../Pool/styleds'
 import { ConfirmAddModalBottom } from './ConfirmAddModalBottom'
 import { currencyId } from '../../utils/currencyId'
 import { PoolPriceBar } from './PoolPriceBar'
+import OptionInputPanel from '../../components/OptionInputPanel'
+import { OptionItem } from '../../components/OptionSelectModal/OptionSelectModal'
+import { getContractMeta } from '../../xnsure'
+import { useContract, useTokenContract } from '../../hooks/useContract'
+import erc20 from '../../constants/abis/erc20.json'
+import { Contract } from '@ethersproject/contracts'
+import Web3 from 'web3';
 
 export default function AddLiquidity({
   match: {
@@ -44,11 +51,13 @@ export default function AddLiquidity({
   },
   history
 }: RouteComponentProps<{ currencyIdA?: string; currencyIdB?: string }>) {
-  const { account, chainId, library } = useActiveWeb3React()
+  const { account, library, chainId } = useActiveWeb3React()
   const theme = useContext(ThemeContext)
 
   const currencyA = useCurrency(currencyIdA)
   const currencyB = useCurrency(currencyIdB)
+
+  useTokenContract('0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa', )
 
   const oneCurrencyIsWETH = Boolean(
     chainId &&
@@ -75,7 +84,25 @@ export default function AddLiquidity({
     poolTokenPercentage,
     error
   } = useDerivedMintInfo(currencyA ?? undefined, currencyB ?? undefined)
-  const { onFieldAInput, onFieldBInput } = useMintActionHandlers(noLiquidity)
+  //const { onFieldAInput, onFieldBInput } = useMintActionHandlers(noLiquidity)
+  const [filedA, setFiledA] = useState('0');
+  const [filedB, setFiledB] = useState('0');
+  function onFieldAInput(typedValue: string) {
+    console.log(Number(typedValue))
+    
+    setFiledA(typedValue)
+  }
+
+  function onFieldBInput(typedValue: string) {
+    console.log(typedValue)
+    setFiledB(typedValue)
+  }
+  
+
+  const meta = getContractMeta('OptionController')
+  const contract = useContract(meta.address, meta.abi)
+  console.log('测试合约测试合约 测试合约测试合约 测试合约')
+  console.log(contract)
 
   const isValid = !error
 
@@ -118,95 +145,11 @@ export default function AddLiquidity({
   // check whether the user has approved the router on the tokens
   const [approvalA, approveACallback] = useApproveCallback(parsedAmounts[Field.CURRENCY_A], ROUTER_ADDRESS)
   const [approvalB, approveBCallback] = useApproveCallback(parsedAmounts[Field.CURRENCY_B], ROUTER_ADDRESS)
-
+  const dai = useTokenContract('0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa')
   const addTransaction = useTransactionAdder()
 
   async function onAdd() {
-    if (!chainId || !library || !account) return
-    const router = getRouterContract(chainId, library, account)
-
-    const { [Field.CURRENCY_A]: parsedAmountA, [Field.CURRENCY_B]: parsedAmountB } = parsedAmounts
-    if (!parsedAmountA || !parsedAmountB || !currencyA || !currencyB) {
-      return
-    }
-
-    const amountsMin = {
-      [Field.CURRENCY_A]: calculateSlippageAmount(parsedAmountA, noLiquidity ? 0 : allowedSlippage)[0],
-      [Field.CURRENCY_B]: calculateSlippageAmount(parsedAmountB, noLiquidity ? 0 : allowedSlippage)[0]
-    }
-
-    const deadlineFromNow = Math.ceil(Date.now() / 1000) + deadline
-
-    let estimate,
-      method: (...args: any) => Promise<TransactionResponse>,
-      args: Array<string | string[] | number>,
-      value: BigNumber | null
-    if (currencyA === ETHER || currencyB === ETHER) {
-      const tokenBIsETH = currencyB === ETHER
-      estimate = router.estimateGas.addLiquidityETH
-      method = router.addLiquidityETH
-      args = [
-        wrappedCurrency(tokenBIsETH ? currencyA : currencyB, chainId)?.address ?? '', // token
-        (tokenBIsETH ? parsedAmountA : parsedAmountB).raw.toString(), // token desired
-        amountsMin[tokenBIsETH ? Field.CURRENCY_A : Field.CURRENCY_B].toString(), // token min
-        amountsMin[tokenBIsETH ? Field.CURRENCY_B : Field.CURRENCY_A].toString(), // eth min
-        account,
-        deadlineFromNow
-      ]
-      value = BigNumber.from((tokenBIsETH ? parsedAmountB : parsedAmountA).raw.toString())
-    } else {
-      estimate = router.estimateGas.addLiquidity
-      method = router.addLiquidity
-      args = [
-        wrappedCurrency(currencyA, chainId)?.address ?? '',
-        wrappedCurrency(currencyB, chainId)?.address ?? '',
-        parsedAmountA.raw.toString(),
-        parsedAmountB.raw.toString(),
-        amountsMin[Field.CURRENCY_A].toString(),
-        amountsMin[Field.CURRENCY_B].toString(),
-        account,
-        deadlineFromNow
-      ]
-      value = null
-    }
-
-    setAttemptingTxn(true)
-    await estimate(...args, value ? { value } : {})
-      .then(estimatedGasLimit =>
-        method(...args, {
-          ...(value ? { value } : {}),
-          gasLimit: calculateGasMargin(estimatedGasLimit)
-        }).then(response => {
-          setAttemptingTxn(false)
-
-          addTransaction(response, {
-            summary:
-              'Add ' +
-              parsedAmounts[Field.CURRENCY_A]?.toSignificant(3) +
-              ' ' +
-              currencies[Field.CURRENCY_A]?.symbol +
-              ' and ' +
-              parsedAmounts[Field.CURRENCY_B]?.toSignificant(3) +
-              ' ' +
-              currencies[Field.CURRENCY_B]?.symbol
-          })
-
-          setTxHash(response.hash)
-
-          ReactGA.event({
-            category: 'Liquidity',
-            action: 'Add',
-            label: [currencies[Field.CURRENCY_A]?.symbol, currencies[Field.CURRENCY_B]?.symbol].join('/')
-          })
-        })
-      )
-      .catch(error => {
-        setAttemptingTxn(false)
-        // we only care if the error is something _other_ than the user rejected the tx
-        if (error?.code !== 4001) {
-          console.error(error)
-        }
-      })
+    console.log('onAddmonAddonAdd onAdd onAdd ')
   }
 
   const modalHeader = () => {
@@ -263,36 +206,75 @@ export default function AddLiquidity({
     )
   }
 
+  const DAICurrency = {decimals: 0, symbol: 'DAI', name: 'DAI'} as Currency
+
   const pendingText = `Supplying ${parsedAmounts[Field.CURRENCY_A]?.toSignificant(6)} ${
     currencies[Field.CURRENCY_A]?.symbol
   } and ${parsedAmounts[Field.CURRENCY_B]?.toSignificant(6)} ${currencies[Field.CURRENCY_B]?.symbol}`
 
   const handleCurrencyASelect = useCallback(
     (currencyA: Currency) => {
-      const newCurrencyIdA = currencyId(currencyA)
-      if (newCurrencyIdA === currencyIdB) {
-        history.push(`/add/${currencyIdB}/${currencyIdA}`)
-      } else {
-        history.push(`/add/${newCurrencyIdA}/${currencyIdB}`)
-      }
     },
     [currencyIdB, history, currencyIdA]
+
   )
-  const handleCurrencyBSelect = useCallback(
-    (currencyB: Currency) => {
-      const newCurrencyIdB = currencyId(currencyB)
-      if (currencyIdA === newCurrencyIdB) {
-        if (currencyIdB) {
-          history.push(`/add/${currencyIdB}/${newCurrencyIdB}`)
-        } else {
-          history.push(`/add/${newCurrencyIdB}`)
-        }
-      } else {
-        history.push(`/add/${currencyIdA ? currencyIdA : 'ETH'}/${newCurrencyIdB}`)
+
+  function onConfirm() {
+    async function call() {
+
+      const q = Web3.utils.toWei('6.3') 
+      console.log("niko test web3 to Wei")
+      console.log(q)
+      if (!contract) {
+        return
       }
-    },
-    [currencyIdA, history, currencyIdB]
-  )
+      const meta = getContractMeta('OptionController');
+      
+      if (!dai) {
+        return
+      }
+      console.log("niko 测试 dai")
+      console.log(filedA)
+      const result = await dai.approve(meta.address, Web3.utils.toWei(filedA), {
+          gasLimit: 300000
+        })
+        console.log(result)
+        if (!optionTokenAddr || !library || !account) {
+          return
+        }
+      const optionToken = new Contract(optionTokenAddr, erc20, getProviderOrSigner(library, account) as any)
+      const result2 = await optionToken.approve(meta.address, Web3.utils.toWei(filedB), {
+        gasLimit: 300000
+      })
+      console.log(result2)
+      if (!optionItem) {
+        return
+      }
+
+      console.log("niko 调用的参数")
+      console.log(JSON.stringify([String(optionItem.deadline), String(optionItem.target), Web3.utils.toWei(filedB), Web3.utils.toWei(filedA), "0","0"]))
+
+      
+      const result3 = await contract.addLiquidity(String(optionItem.deadline*10), String(optionItem.target), Web3.utils.toWei(filedB), Web3.utils.toWei(filedA), "0","0", {gasLimit: 30000})
+      //await contract.addLiquidity( {gasLimit: 300000})
+      console.log("after add liquidity")
+      console.log(result3)
+    }
+    call()
+  }
+
+  const [optionItem, setOptionItem] = useState<OptionItem>()
+  const [optionTokenAddr, setOptionTokenAddr] = useState('')
+
+
+  const handleCurrencyBSelect = async (optionitem: OptionItem) => {
+    setOptionItem(optionitem)
+    if (!contract) {
+      return
+    }
+    const addr = contract.getOptionAddress(String(optionitem.deadline), String(optionitem.target));
+    setOptionTokenAddr(addr)
+  }
 
   const handleDismissConfirmation = useCallback(() => {
     setShowConfirm(false)
@@ -342,24 +324,24 @@ export default function AddLiquidity({
               </ColumnCenter>
             )}
             <CurrencyInputPanel
-              value={formattedAmounts[Field.CURRENCY_A]}
+              value={filedA}
               onUserInput={onFieldAInput}
               onMax={() => {
                 onFieldAInput(maxAmounts[Field.CURRENCY_A]?.toExact() ?? '')
               }}
               onCurrencySelect={handleCurrencyASelect}
               showMaxButton={!atMaxAmounts[Field.CURRENCY_A]}
-              currency={currencies[Field.CURRENCY_A]}
+              currency={DAICurrency}
               id="add-liquidity-input-tokena"
               showCommonBases
             />
             <ColumnCenter>
               <Plus size="16" color={theme.text2} />
             </ColumnCenter>
-            <CurrencyInputPanel
-              value={formattedAmounts[Field.CURRENCY_B]}
+            <OptionInputPanel
+              value={filedB}
               onUserInput={onFieldBInput}
-              onCurrencySelect={handleCurrencyBSelect}
+              onDateSelected={handleCurrencyBSelect}
               onMax={() => {
                 onFieldBInput(maxAmounts[Field.CURRENCY_B]?.toExact() ?? '')
               }}
@@ -387,58 +369,14 @@ export default function AddLiquidity({
                 </GreyCard>
               </>
             )}
-
-            {!account ? (
-              <ButtonLight onClick={toggleWalletModal}>Connect Wallet</ButtonLight>
-            ) : (
-              <AutoColumn gap={'md'}>
-                {(approvalA === ApprovalState.NOT_APPROVED ||
-                  approvalA === ApprovalState.PENDING ||
-                  approvalB === ApprovalState.NOT_APPROVED ||
-                  approvalB === ApprovalState.PENDING) &&
-                  isValid && (
-                    <RowBetween>
-                      {approvalA !== ApprovalState.APPROVED && (
-                        <ButtonPrimary
-                          onClick={approveACallback}
-                          disabled={approvalA === ApprovalState.PENDING}
-                          width={approvalB !== ApprovalState.APPROVED ? '48%' : '100%'}
-                        >
-                          {approvalA === ApprovalState.PENDING ? (
-                            <Dots>Approving {currencies[Field.CURRENCY_A]?.symbol}</Dots>
-                          ) : (
-                            'Approve ' + currencies[Field.CURRENCY_A]?.symbol
-                          )}
-                        </ButtonPrimary>
-                      )}
-                      {approvalB !== ApprovalState.APPROVED && (
-                        <ButtonPrimary
-                          onClick={approveBCallback}
-                          disabled={approvalB === ApprovalState.PENDING}
-                          width={approvalA !== ApprovalState.APPROVED ? '48%' : '100%'}
-                        >
-                          {approvalB === ApprovalState.PENDING ? (
-                            <Dots>Approving {currencies[Field.CURRENCY_B]?.symbol}</Dots>
-                          ) : (
-                            'Approve ' + currencies[Field.CURRENCY_B]?.symbol
-                          )}
-                        </ButtonPrimary>
-                      )}
-                    </RowBetween>
-                  )}
                 <ButtonError
-                  onClick={() => {
-                    expertMode ? onAdd() : setShowConfirm(true)
-                  }}
-                  disabled={!isValid || approvalA !== ApprovalState.APPROVED || approvalB !== ApprovalState.APPROVED}
-                  error={!isValid && !!parsedAmounts[Field.CURRENCY_A] && !!parsedAmounts[Field.CURRENCY_B]}
+                  onClick={onConfirm}
+                  disabled={filedA === '0' || filedB === '0'}
                 >
                   <Text fontSize={20} fontWeight={500}>
-                    {error ?? 'Supply'}
+                    {'Confirm'}
                   </Text>
                 </ButtonError>
-              </AutoColumn>
-            )}
           </AutoColumn>
         </Wrapper>
       </AppBody>
