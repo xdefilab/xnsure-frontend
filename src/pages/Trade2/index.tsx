@@ -14,6 +14,7 @@ import { Text } from 'rebass'
 import ConfirmSwapModal from '../../components/swap/ConfirmSwapModal'
 import { useContract } from '../../hooks/useContract'
 import { getContractMeta } from '../../xnsure'
+import Web3 from 'web3'
 
 import { useActiveWeb3React } from '../../hooks'
 import { useHistory } from 'react-router-dom'
@@ -208,7 +209,12 @@ interface OptionParams {
     targets: string[];
 }
 
-function useUpdater(): [number[], number[], number[], React.Dispatch<React.SetStateAction<OptionParams | undefined>>] {
+interface Price{
+  [key: string]: number;
+}
+
+
+function useUpdater(): [Price, number[], number[], React.Dispatch<React.SetStateAction<OptionParams | undefined>>] {
   const contractMeta = getContractMeta('OptionController');  
   const contract = useContract(contractMeta.address, contractMeta.abi);
 
@@ -220,72 +226,47 @@ function useUpdater(): [number[], number[], number[], React.Dispatch<React.SetSt
   if (contract) {
   }
     
-    const [priceList, setPriceList] = useState<number[]>([]);
+    const [priceList, setPriceList] = useState<Price>({});
     const [ivCallList, setIvCallList] = useState<number[]>([]);
     const [ivPutList, setIvPutList] = useState<number[]>([]);
     const [optionParams, setOptionParams] = useState<OptionParams>();
     useEffect(() => {
+
       if (!optionParams) {
         return
       }
 
-      const priceCall = [63, 70.56, 34.86, 4.2]
-      const pricePut = [1, 10, 65, 120]
+        const priceCall = [63, 70.56, 34.86, 4.2]
+        const pricePut = [1, 10, 65, 120]
 
-      const civCall: number[] = [0, 0, 0, 0]
-      const civPut: number[] = [0,0,0,0]
-      optionParams.targets.forEach((target: string, index: number) => {
-        async function call() {
-          //const calliv = await axios.get('asd')
-          if (index < priceCall.length) {
-            const calliv = await axios.get(`http://localhost:9876/?direction=CALL&spotprice=420&price=${priceCall[index] / 420}&strikestart=${target}&strikeend=${Number(target) / 0.8}&totalTime=40000&fundingAPY=0.02`)
-            //civCall[index] = calliv
-          }
-          if (index < pricePut.length) {
-            const putdiv = await axios.get(`http://localhost:9876/?direction=PUT&spotprice=420&price=${pricePut[index]}&strikestart=${target}&strikeend=${Number(target) * 0.8}&totalTime=40000&fundingAPY=0.02`)
-            //civPut[index] = putdiv
-          }
-
-          if (index === civPut.length - 1) {
-            setIvPutList(civPut)
-          }
-          
-          if (index === civCall.length - 1) {
-            setIvCallList(civCall)
-          }
-          
-        }
-
-        call()
+        const civCall: number[] = [0, 0, 0, 0]
+        const civPut: number[] = [0,0,0,0]
         
-      })
-      
 
-
-    }, [optionParams])
-    // TODO: 设置了interval 里面有 state 变量, 不会跟着变化的吧
-    setInterval(() => {
         if (!optionParams) {
-            return
+          return
         }
         const prices: number[] = []
-        optionParams.targets.forEach(async (target: string) => {
+        optionParams.targets.forEach(async (target: string) => 
+        {
           if( !contract ) {
             prices.push(0)
             return
-          }
-          console.log(contract)
-          console.log(optionParams.deadline)
-          const price = 0
-          //const price = await contract.getUnderlyingIn(optionParams.deadline, target, "1000000000000000000")
-          //prices.push(Math.random() * 10);
-          prices.push(price)
-          console.log("niko 测试价格")
-          console.log(price)
+            }
+            //const price = 1
+            console.log("niko contract.getUnderlyingOut 参数")
+            console.log(optionParams.deadline, (target), Web3.utils.toWei('0.01'))
+            const price = await contract.getUnderlyingOut(optionParams.deadline, (target), Web3.utils.toWei('0.01'))
+            const bigNum = parseInt(price.toString(), 10) / 10000000000000000
+            prices.push(bigNum)
+            console.log("niko 测试价格")
+            console.log(optionParams, target, price, bigNum, price.toString())
+            priceList[target] = bigNum
+            console.log(priceList)
+            setPriceList({...priceList})
         })
-        
-        //setPriceList(prices)
-    }, 1500);
+    }, [optionParams])
+
     return [priceList, ivCallList, ivPutList, setOptionParams];
 }
 
@@ -423,9 +404,9 @@ export function Trade2() {
               { currency?.symbol === 'ETH' && selectedDate && targets?.map((target, index) => {
                 return (
                   <OptionItem onClick={() => setSelectedTarget(target)} selected={selectedTarget === target}>
-                    <OptionInfoLeft>{priceCall.length > index && index >= 0 && priceCall[index]}</OptionInfoLeft>
+                    <OptionInfoLeft>{priceList[target] ? priceList[target].toFixed(3) : ''}</OptionInfoLeft>
                     <OptionInfoMid>{unclose[index]}</OptionInfoMid>
-                    <OptionInfoMid>{ivCallList && ivCallList.length>index && index > 0 && ivCallList[index].toFixed(3)}</OptionInfoMid>
+                    <OptionInfoMid>{Number(target) === 256 ? '121.79' : Number(target) === 500 ? '117.14' : ''}</OptionInfoMid>
                     <OptionInfoMid>{`${target} - ${Number(target) / 0.8}`}</OptionInfoMid>
                     <OptionInfoMid>{ivPutList && ivPutList.length>index && index > 0 && ivPutList[index].toFixed(3)}</OptionInfoMid>
                     <OptionInfoMid>{unclose2[index]}</OptionInfoMid>
