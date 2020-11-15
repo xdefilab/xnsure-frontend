@@ -9,7 +9,7 @@ export interface ContractMeta {
 
 const dev_map: { [key: string]: ContractMeta } = {
     OptionController: {
-        address: '0xBFdc756AAD0EeB73785E3C0Be67C5F4C4c3010d9',
+        address: '0xE1823628707D7Eb4c6fE0639dF0d1506b3e0fBCC',
         abi: OPEN_CONTROLLER.abi
     }
 }

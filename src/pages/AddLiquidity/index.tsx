@@ -255,7 +255,7 @@ export default function AddLiquidity({
       console.log(JSON.stringify([String(optionItem.deadline), String(optionItem.target), Web3.utils.toWei(filedB), Web3.utils.toWei(filedA), "0","0"]))
 
       
-      const result3 = await contract.addLiquidity(String(optionItem.deadline*10), String(optionItem.target), Web3.utils.toWei(filedB), Web3.utils.toWei(filedA), "0","0", {gasLimit: 30000})
+      const result3 = await contract.addLiquidity(String(optionItem.deadline), String(optionItem.target), Web3.utils.toWei(filedB), Web3.utils.toWei(filedA), "0","0", {gasLimit: 30000})
       //await contract.addLiquidity( {gasLimit: 300000})
       console.log("after add liquidity")
       console.log(result3)

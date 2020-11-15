@@ -15,7 +15,10 @@ import { Text } from 'rebass'
 import ConfirmSwapModal from '../../components/swap/ConfirmSwapModal'
 import { useContract, useTokenContract } from '../../hooks/useContract'
 import { getContractMeta } from '../../xnsure'
+import { calculateGasMargin, calculateSlippageAmount, getRouterContract, getProviderOrSigner } from '../../utils'
 
+import erc20 from '../../constants/abis/erc20.json'
+import { Contract } from '@ethersproject/contracts'
 import { useActiveWeb3React } from '../../hooks'
 import { useHistory } from 'react-router-dom'
 import Web3 from 'web3'
@@ -187,8 +190,11 @@ interface OptionParams {
     deadline: string;
     targets: string[];
 }
+interface Price{
+  [key: string]: number;
+}
 
-function useUpdater(): [number[], React.Dispatch<React.SetStateAction<OptionParams | undefined>>] {
+function useUpdater(): [Price, React.Dispatch<React.SetStateAction<OptionParams | undefined>>] {
   const contractMeta = getContractMeta('OptionController');  
   const contract = useContract(contractMeta.address, contractMeta.abi);
 
@@ -199,33 +205,44 @@ function useUpdater(): [number[], React.Dispatch<React.SetStateAction<OptionPara
   if (contract) {
   }
   
-    const [priceList, setPriceList] = useState<number[]>([]);
+    const [priceList, setPriceList] = useState<Price>({});
     const [optionParams, setOptionParams] = useState<OptionParams>();
     // TODO: 设置了interval 里面有 state 变量, 不会跟着变化的吧
-    setInterval(() => {
+    useEffect(() => {
+
+      setTimeout(() => {
         if (!optionParams) {
-            return
+          return
         }
-        const prices: number[] = []
-        optionParams.targets.forEach(async (target: string) => {
-          if( !contract ) {
-            prices.push(0)
-            return
+      const prices: number[] = []
+      optionParams.targets.forEach(async (target: string) => {
+        if( !contract ) {
+          prices.push(0)
+          return
           }
-          console.log(contract)
-          console.log(optionParams.deadline)
-          console.log("niko 的trade数据调用参数")
-          console.log([optionParams.deadline, target, "1000000000000000000"])
-          const price = 1
-          //const price = await contract.getUnderlyingIn(optionParams.deadline, (target), Web3.utils.toWei('1'))
-          //prices.push(Math.random() * 10);
-          prices.push(price)
-          console.log("niko 测试价格")
-          console.log(price)
+          try {
+//const price = 1
+console.log("niko contract.getUnderlyingOut 参数")
+console.log(optionParams.deadline, (target), Web3.utils.toWei('0.01'))
+const price = await contract.getUnderlyingOut(optionParams.deadline, (target), Web3.utils.toWei('0.01'))
+const bigNum = parseInt(price.toString(), 10) / 10000000000000000
+prices.push(bigNum)
+console.log("niko 测试价格")
+console.log(optionParams, target, price, bigNum, price.toString())
+priceList[target] = bigNum
+console.log(priceList)
+setPriceList({...priceList})
+          }catch (err) {
+
+          } finally {
+          }
+          
         })
-        
-        //setPriceList(prices)
-    }, 1500);
+      })
+      
+      
+    }, [optionParams])
+
     return [priceList, setOptionParams];
 }
 
@@ -245,6 +262,7 @@ export function Trade() {
   
   const [targets, setTargets] = useState<string[]>([])
   const [deadlines, setDeadlines] = useState<string[]>([])
+  const { account, library, chainId } = useActiveWeb3React()
 
   const [priceList, setOptionParams] = useUpdater();
 
@@ -361,7 +379,7 @@ export function Trade() {
                     <OptionInfoMid>{callput}</OptionInfoMid>
                     <OptionInfoMid>{selectedDate}</OptionInfoMid>
                     <OptionInfoMid>{target}</OptionInfoMid>
-                    <OptionInfoRight>{ priceCall && priceCall.length > index && index >= 0 && priceCall[index]}</OptionInfoRight>
+                    <OptionInfoRight>{ priceList[target] ? priceList[target].toFixed(3) : ''}</OptionInfoRight>
                   </OptionItem>
                 )
               })}
@@ -412,9 +430,21 @@ export function Trade() {
                 if (!dai) {
                   return
                 }
-                await dai.approve(meta.address, Web3.utils.toWei(tradeAmount), {
-                  gasLimit: 300000
-                })
+                if (buysell === 'BUY') {
+                  await dai.approve(meta.address, Web3.utils.toWei(tradeAmount), {
+                    gasLimit: 300000
+                  })
+                }else {
+                  if (!contract || !library || !account) {
+                    return
+                  }
+                  const addr = contract.getOptionAddress(deadlines[0], selectedTarget);
+                  const optionToken = new Contract(addr, erc20, getProviderOrSigner(library, account) as any)
+                  const result2 = await optionToken.approve(meta.address, Web3.utils.toWei(tradeAmount), {
+                    gasLimit: 300000
+                  })
+                }
+                
                 if (!contract) {
                   return
                 }
