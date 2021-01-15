@@ -1,16 +1,25 @@
 {
-  "short_name": "xNsure",
-  "name": "xNsure",
+  "short_name": "React App",
+  "name": "Create React App Sample",
   "icons": [
     {
-      "src": "./logo.png",
-      "sizes": "864x864",
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
       "type": "image/png",
-      "purpose": "any maskable"
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
     }
   ],
-  "orientation": "portrait",
+  "start_url": ".",
   "display": "standalone",
-  "theme_color": "#ff007a",
-  "background_color": "#fff"
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
 }

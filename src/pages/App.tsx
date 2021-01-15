@@ -1,128 +1,56 @@
-import React, { Suspense } from 'react'
-import { HashRouter, Route, Switch } from 'react-router-dom'
-import styled from 'styled-components'
-import GoogleAnalyticsReporter from '../components/analytics/GoogleAnalyticsReporter'
-import Header from '../components/Header'
-import Popups from '../components/Popups'
-import Web3ReactManager from '../components/Web3ReactManager'
-import { Trade } from './Trade'
-import { RedirectPathToTradeOnly } from './Trade/redirects'
-import { Mint } from './Mint'
-import AddLiquidity from './AddLiquidity'
-import { useContract } from '../hooks/useContract'
-import NSUREPUTTOKEN_ABI from '../constants/xnsure/NsurePutToken.json'
+import React from 'react';
+import styled from 'styled-components';
+import Header from '../components/header/header';
+import Footer from '../components/footer/footer';
+import { PlaceHolder, ColumnLayout } from '../components/common/common';
+import { isMobile } from 'react-device-detect';
 
-import { useActiveWeb3React } from '../hooks'
-import {
-  RedirectDuplicateTokenIds,
-  RedirectOldAddLiquidityPathStructure,
-  RedirectToAddLiquidity
-} from './AddLiquidity/redirects'
-import MigrateV1 from './MigrateV1'
-import MigrateV1Exchange from './MigrateV1/MigrateV1Exchange'
-import RemoveV1Exchange from './MigrateV1/RemoveV1Exchange'
-import Pool from './Pool'
-import PoolFinder from './PoolFinder'
-import RemoveLiquidity from './RemoveLiquidity'
-import { RedirectOldRemoveLiquidityPathStructure } from './RemoveLiquidity/redirects'
-import Swap from './Swap'
-import { RedirectPathToSwapOnly, RedirectToSwap } from './Swap/redirects'
- 
-import { InjectedConnector } from '@web3-react/injected-connector'
-import { Trade2 } from './Trade2'
-
-const AppWrapper = styled.div`
-  display: flex;
-  flex-flow: column;
-  align-items: flex-start;
-  overflow-x: hidden;
-`
-
-const HeaderWrapper = styled.div`
-  ${({ theme }) => theme.flexRowNoWrap}
+const Page = styled.div`
+  background-color: #1E2049;
   width: 100%;
-  justify-content: space-between;
-`
-
-const BodyWrapper = styled.div`
+  height: 100%;
+  position: absolute;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  padding-top: 160px;
-  align-items: center;
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  z-index: 10;
+`;
 
-  ${({ theme }) => theme.mediaWidth.upToExtraSmall`
-      padding: 16px;
-  `};
+const PCAppWrap = styled.div`
+  background-color: #272958;
+  height: 85%;
+  width: 90%;
+  max-width: 62.5rem;
+  min-width: 35rem;
+  max-height: 32rem;
+  min-height: 25rem;
+  flex-grow: 1;
+  flex-shrink: 1;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0.75rem;
+`;
 
-  z-index: 1;
-`
+const H5AppWrap = styled.div`
+    background-color: #272958;
+    height: 90%;
+    width: 90%;
+    border-radius: 0.75rem;
+    position: absolute;
+`;
 
-const Marginer = styled.div`
-  margin-top: 5rem;
-`
+function AppBody() {
+    const mobileBody = <H5AppWrap></H5AppWrap>
+    const pcBody = <PCAppWrap></PCAppWrap>
+    return <PlaceHolder>
+        {isMobile ? mobileBody : pcBody}
+    </PlaceHolder>
+}
 
 
 export default function App() {
-  console.log('holy crap!!!!!!!!!!!!!!!!')
-  //const { chainId, account, connector } = useActiveWeb3React()
-  const contract = useContract('0xD833215cBcc3f914bD1C9ece3EE7BF8B14f841bb', NSUREPUTTOKEN_ABI.abi);
-
-  
-  const result = useActiveWeb3React();
-  console.log(result)
-  return (
-    <Suspense fallback={null}>
-      <HashRouter>
-        <Route component={GoogleAnalyticsReporter} />
-        <AppWrapper>
-          <HeaderWrapper>
-            <Header />
-          </HeaderWrapper>
-          <BodyWrapper>
-            <Popups />
-            <Web3ReactManager>
-              <Switch>
-                <Route exact strict path="/trade" component={Trade} />
-                <Route exact strict path="/trade2" component={Trade2} />
-                <Route exact strict path="/mint" component={Mint} />
-                
-                <Route exact strict path="/find" component={PoolFinder} />
-                <Route exact strict path="/pool" component={Pool} />
-                <Route exact strict path="/create" component={RedirectToAddLiquidity} />
-                <Route exact path="/add" component={AddLiquidity} />
-                <Route exact path="/add/:currencyIdA" component={RedirectOldAddLiquidityPathStructure} />
-                <Route exact path="/add/:currencyIdA/:currencyIdB" component={RedirectDuplicateTokenIds} />
-
-                <Route exact strict path="/remove/:tokens" component={RedirectOldRemoveLiquidityPathStructure} />
-                <Route exact strict path="/remove/:currencyIdA/:currencyIdB" component={RemoveLiquidity} />
-
-                <Route component={RedirectPathToTradeOnly} />
-                {/*                 <Route exact strict path="/swap" component={Swap} />
-                <Route exact strict path="/swap/:outputCurrency" component={RedirectToSwap} />
-                <Route exact strict path="/send" component={RedirectPathToSwapOnly} />
-                <Route exact strict path="/find" component={PoolFinder} />
-                <Route exact strict path="/pool" component={Pool} />
-                <Route exact strict path="/create" component={RedirectToAddLiquidity} />
-                <Route exact path="/add" component={AddLiquidity} />
-                <Route exact path="/add/:currencyIdA" component={RedirectOldAddLiquidityPathStructure} />
-                <Route exact path="/add/:currencyIdA/:currencyIdB" component={RedirectDuplicateTokenIds} />
-                <Route exact strict path="/remove/v1/:address" component={RemoveV1Exchange} />
-                <Route exact strict path="/remove/:tokens" component={RedirectOldRemoveLiquidityPathStructure} />
-                <Route exact strict path="/remove/:currencyIdA/:currencyIdB" component={RemoveLiquidity} />
-                <Route exact strict path="/migrate/v1" component={MigrateV1} />
-                <Route exact strict path="/migrate/v1/:address" component={MigrateV1Exchange} />
-                <Route component={RedirectPathToSwapOnly} /> */}
-              </Switch>
-            </Web3ReactManager>
-            <Marginer />
-          </BodyWrapper>
-        </AppWrapper>
-      </HashRouter>
-    </Suspense>
-  )
+    //
+    return <Page>
+        <Header></Header>
+        <AppBody/>
+        <Footer></Footer>
+    </Page>
 }
