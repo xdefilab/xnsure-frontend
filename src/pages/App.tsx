@@ -4,6 +4,8 @@ import Header from '../components/header/header';
 import Footer from '../components/footer/footer';
 import { PlaceHolder, ColumnLayout } from '../components/common/common';
 import { isMobile } from 'react-device-detect';
+import PCApp from './pc';
+
 
 const Page = styled.div`
   background-color: #1E2049;
@@ -39,7 +41,7 @@ const H5AppWrap = styled.div`
 
 function AppBody() {
     const mobileBody = <H5AppWrap></H5AppWrap>
-    const pcBody = <PCAppWrap></PCAppWrap>
+    const pcBody = <PCAppWrap><PCApp /></PCAppWrap>
     return <PlaceHolder>
         {isMobile ? mobileBody : pcBody}
     </PlaceHolder>
