@@ -2,3 +2,42 @@
   height: 100%;
   width: 100%;
 }
+.options-tabs .ant-tabs-content-holder {
+  border: none;
+}
+
+.options-tabs .ant-tabs-nav-wrap {
+  background: #242653;
+  border-radius: 12px 0 0 12px;
+  border-radius: 12px 0px 0px 12px;
+}
+
+.options-tabs .ant-tabs-tab {
+  width: 93px;
+  height: 70px;
+  margin: 0 !important;
+  font-family: PingFangSC-Regular;
+  font-size: 14px;
+  color: #72739a;
+  letter-spacing: 0.39px;
+}
+
+.options-tabs .ant-tabs-tab-active {
+  background: #272958;
+  border-radius: 12px 0 0 12px;
+  border-radius: 12px 0px 0px 12px;
+}
+
+.options-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+  font-family: PingFangSC-Regular;
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.options-tabs .ant-tabs-ink-bar {
+  display: none;
+}
+
+.options-tabs .ant-tabs-tabpane {
+  padding: 0 !important;
+}
